@@ -23,7 +23,7 @@ The REST API returns a response similar to the following:
 {
     "VersionNumber": "1.1.2",
     "Url": "https://download.portal.mbktechstudio.com/Assets/portal_mbktechstudio.apk",
-    "PortaLive": "f"
+    "PortaLive": "true"
 }
 ```
 
