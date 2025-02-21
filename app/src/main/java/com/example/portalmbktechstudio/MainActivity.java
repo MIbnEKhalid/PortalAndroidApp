@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREFS_NAME = "AppPreferences";
     private static final String KEY_SKIP_UPDATE = "SkipUpdate";
     private static final String TAG = "WebViewDebug";
-    ImageButton backButton;
+    // ImageButton backButton;
     // Button backButton;
 
     @Override
@@ -59,7 +59,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "WebView error: " + description);
             }
         });
-        backButton = findViewById(R.id.backButton);
+
+        /*backButton = findViewById(R.id.backButton);
         backButton.setVisibility(View.GONE); // Initially hidden
 
         backButton.setOnClickListener(new View.OnClickListener() {
@@ -85,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
+*/
         myWeb.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
@@ -94,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
                     progressBar.setProgress(newProgress);
                 } else {
                     progressBar.setVisibility(View.GONE);
+
                 }
             }
         });
@@ -121,6 +123,15 @@ public class MainActivity extends AppCompatActivity {
 
         // Always check for updates on app launch
         checkForUpdates();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (myWeb.canGoBack()) {
+            myWeb.goBack();
+        } else {
+            super.onBackPressed();
+        }
     }
 
     private boolean isVersionOutdated(String currentVersion, String latestVersion) {
@@ -166,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "`checkForUpdates` Latest version retrieved: " + latestVersion);
                 Log.d(TAG, "`checkForUpdates` Update URL retrieved: " + updateUrl);
 
-                String currentVersion = "1.1.2";
+                String currentVersion = "1.2";
                 Log.d(TAG, "`checkForUpdates` Current version: " + currentVersion);
 
                 if (isVersionOutdated(currentVersion, latestVersion)) {

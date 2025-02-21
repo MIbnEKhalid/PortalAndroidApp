@@ -1,12 +1,18 @@
 # Portal MBK Tech Studio App
 A simple Android app that displays the WebView of [portal.mbktechstudio.com](https://portal.mbktechstudio.com). This is an Android Studio project.
 
+## Bug
+### Known Issue
+
+When the page loads successfully after a network error, the debug message and reload button do not disappear.
+
 ## Overview
 
 The app acts as a wrapper around your website. It loads your site in a WebView while providing:
 - A smooth user experience with a green loader indicating page loading progress.
 - Version control using a REST API. The API checks if the current app version is up-to-date; if not, the user is prompted to update.
 - Portal availability check through the same API. If the portal is down, the user is notified and redirected to the main website ([mbktechstudio.com](https://mbktechstudio.com)).
+- Navigation control using the mobile back button to load the previous web page.
 
 ## Features
 
@@ -14,7 +20,7 @@ The app acts as a wrapper around your website. It loads your site in a WebView w
 - **Version Control:** Uses a REST API endpoint (`https://api.mbktechstudio.com/api/poratlAppVersion`) to verify the current version. If the version is lower than the latest, an update prompt is displayed. If the user selects the "Skip Update" option, the notification will appear again on the next app start.
 - **Portal Health Check:** Checks the `PortaLive` status through the API. If the portal is not active, the app informs the user and redirects them to the main site.
 - **Loading Indicator:** A progress bar (green loader) indicates the page loading status.
-- **Back Button:** Displays a back button to navigate to the previous page when a new page is loaded.
+- **Back Navigation:** Allows users to navigate to the previous web page using the mobile back button.
 
 ## API Response Example
 
@@ -63,10 +69,7 @@ The REST API returns a response similar to the following:
 - **Example Image:**
 
   <img style="height:400px; width:180px;" src="https://raw.githubusercontent.com/MIbnEKhalid/PortalAndroidApp/refs/heads/img/error.jpg">
-- When a new page is loaded, a back button is displayed to navigate to the previous page.
-- **Example Image:**
-
-  <img style="height:400px; width:180px;" src="https://raw.githubusercontent.com/MIbnEKhalid/PortalAndroidApp/refs/heads/img/backButton.jpg">
+- Users can navigate to the previous web page using the mobile back button.
 
 ## License
 
