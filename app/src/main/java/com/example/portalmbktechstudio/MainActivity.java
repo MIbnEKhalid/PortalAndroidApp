@@ -170,8 +170,9 @@ public class MainActivity extends AppCompatActivity {
                 String updateUrl = jsonResponse.getString("Url");
                 String PortalLive = jsonResponse.getString("PortaLive");
 
-                if(PortalLive != "true")
+                if (!"true".equals(PortalLive))
                 {
+                    Log.d(TAG, "`checkForUpdates` Portal Down");
                     runOnUiThread(this::showPortalDownNotice);
                 }
                 Log.d(TAG, "`checkForUpdates` Latest version retrieved: " + latestVersion);
