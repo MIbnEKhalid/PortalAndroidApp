@@ -11,6 +11,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.ImageButton;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -31,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREFS_NAME = "AppPreferences";
     private static final String KEY_SKIP_UPDATE = "SkipUpdate";
     private static final String TAG = "WebViewDebug";
+    ImageButton backButton;
+    // Button backButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +57,32 @@ public class MainActivity extends AppCompatActivity {
                 reloadButton.setVisibility(View.VISIBLE);
                 debugMessage.setText("Error: " + description + "\nURL: " + failingUrl);
                 Log.e(TAG, "WebView error: " + description);
+            }
+        });
+        backButton = findViewById(R.id.backButton);
+        backButton.setVisibility(View.GONE); // Initially hidden
+
+        backButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (myWeb.canGoBack()) {
+                    myWeb.goBack();
+                } else {
+                    backButton.setVisibility(View.GONE); // Hide if there's no previous page
+                }
+            }
+        });
+
+// Add WebView navigation listener to control back button visibility
+        myWeb.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                if (myWeb.canGoBack()) {
+                    backButton.setVisibility(View.VISIBLE);
+                } else {
+                    backButton.setVisibility(View.GONE);
+                }
             }
         });
 
@@ -137,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "`checkForUpdates` Latest version retrieved: " + latestVersion);
                 Log.d(TAG, "`checkForUpdates` Update URL retrieved: " + updateUrl);
 
-                String currentVersion = "1.1.1";
+                String currentVersion = "1.1.2";
                 Log.d(TAG, "`checkForUpdates` Current version: " + currentVersion);
 
                 if (isVersionOutdated(currentVersion, latestVersion)) {

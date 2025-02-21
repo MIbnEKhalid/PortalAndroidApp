@@ -1,4 +1,4 @@
-# Portal MBKTechStudio
+# Portal MBK Tech Studio App
 A simple Android app that displays the WebView of [portal.mbktechstudio.com](https://portal.mbktechstudio.com). This is an Android Studio project.
 
 ## Overview
@@ -14,6 +14,7 @@ The app acts as a wrapper around your website. It loads your site in a WebView w
 - **Version Control:** Uses a REST API endpoint (`https://api.mbktechstudio.com/api/poratlAppVersion`) to verify the current version. If the version is lower than the latest, an update prompt is displayed. If the user selects the "Skip Update" option, the notification will appear again on the next app start.
 - **Portal Health Check:** Checks the `PortaLive` status through the API. If the portal is not active, the app informs the user and redirects them to the main site.
 - **Loading Indicator:** A progress bar (green loader) indicates the page loading status.
+- **Back Button:** Displays a back button to navigate to the previous page when a new page is loaded.
 
 ## API Response Example
 
@@ -21,9 +22,9 @@ The REST API returns a response similar to the following:
 
 ```json
 {
-    "VersionNumber": "1.1.2",
-    "Url": "https://download.portal.mbktechstudio.com/Assets/portal_mbktechstudio.apk",
-    "PortaLive": "true"
+  "VersionNumber": "1.1.2",
+  "Url": "https://download.portal.mbktechstudio.com/Assets/portal_mbktechstudio.apk",
+  "PortaLive": "true"
 }
 ```
 
@@ -41,7 +42,7 @@ The REST API returns a response similar to the following:
 - The progress bar (green loader) is visible until the webpage is fully loaded.
 - **Example Image:**
 
-  <img style="height:500px; width:225px;" src="https://raw.githubusercontent.com/MIbnEKhalid/PortalAndroidApp/refs/heads/img/loader.gif">
+  <img style="height:400px; width:180px;" src="https://raw.githubusercontent.com/MIbnEKhalid/PortalAndroidApp/refs/heads/img/loader.gif">
 
 ### Version & Health Check:
 
@@ -49,27 +50,25 @@ The REST API returns a response similar to the following:
 - If the app’s version is outdated, an update dialog is shown.
 - **Example Image:**
 
-  <img style="height:500px; width:225px;" src="https://raw.githubusercontent.com/MIbnEKhalid/PortalAndroidApp/refs/heads/img/update.jpg">
+  <img style="height:400px; width:180px;" src="https://raw.githubusercontent.com/MIbnEKhalid/PortalAndroidApp/refs/heads/img/update.jpg">
 - If the user chooses to "Skip Update," the update notification will reappear the next time the app starts.
 - If the portal is not live (`PortaLive` is not `"true"`), a notice dialog informs the user and redirects them to the main website.
 - **Example Image:**
 
-  <img style="height:500px; width:225px;" src="https://raw.githubusercontent.com/MIbnEKhalid/PortalAndroidApp/refs/heads/img/webDown.jpg">
+  <img style="height:400px; width:180px;" src="https://raw.githubusercontent.com/MIbnEKhalid/PortalAndroidApp/refs/heads/img/webDown.jpg">
 
 ### User Interaction:
 
 - In case of load errors, a debug message and a reload button are displayed to allow the user to retry loading the webpage.
 - **Example Image:**
 
-  <img style="height:500px; width:225px;" src="https://raw.githubusercontent.com/MIbnEKhalid/PortalAndroidApp/refs/heads/img/error.jpg">
+  <img style="height:400px; width:180px;" src="https://raw.githubusercontent.com/MIbnEKhalid/PortalAndroidApp/refs/heads/img/error.jpg">
+- When a new page is loaded, a back button is displayed to navigate to the previous page.
+- **Example Image:**
 
-
-
-
-
+  <img style="height:400px; width:180px;" src="https://raw.githubusercontent.com/MIbnEKhalid/PortalAndroidApp/refs/heads/img/backButton.jpg">
 
 ## License
- 
 
 **Note:** Only The Source Code Of This Website Is Covered Under The **[MIT License](https://opensource.org/license/mit)**.  
 The Project Documentation Covered Under The **[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/)** But Some **Images, Blog Posts, And Other Content Are NOT  
