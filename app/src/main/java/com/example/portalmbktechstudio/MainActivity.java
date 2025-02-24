@@ -1,11 +1,13 @@
 package com.example.portalmbktechstudio;
 
 // Import necessary libraries
+
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
@@ -22,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
 import android.content.SharedPreferences;
 import android.util.Log;
 
@@ -40,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "WebViewDebug";
 
     // URLs and version constants
-    private static final String MAIN_URL = "https://portal.mbktechstudio.com/";
+    private static String MAIN_URL = "https://portal.mbktechstudio.com/";
     private static final String REST_API_URL = "https://api.mbktechstudio.com/api/poratlAppVersion";
     private static final String REDIRECT_URL = "https://mbktechstudio.com";
     private static final String CURRENT_VERSION = "1.2";
@@ -49,15 +52,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        // Initialize UI components and setup functionality
         initializeViews();
         setupWebView();
         setupReloadButton();
         checkForUpdates();
     }
 
-    // Initialize UI components
     private void initializeViews() {
         myWeb = findViewById(R.id.myWeb);
         progressBar = findViewById(R.id.progressBar);
@@ -216,3 +216,120 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 }
+
+
+/*
+
+
+
+    private void initializeUrl() {
+        new Thread(() -> {
+            try {
+                Log.d(TAG, "`initializeUrl` Connection Check 1");
+                HttpURLConnection connection = (HttpURLConnection) new URL("https://api.mbktechstudio.com/api/poratlAppUrl").openConnection();
+                Log.d(TAG, "`initializeUrl` Connection Check 2");
+
+                connection.setRequestMethod("GET");
+                connection.connect();
+                Log.d(TAG, "`initializeUrl` Connected to update API: " + "https://api.mbktechstudio.com/api/poratlAppUrl");
+
+                // Parse response from the API
+                String response = readResponse(connection);
+                JSONObject jsonResponse = new JSONObject(response);
+                String PortalWebUrl = jsonResponse.getString("PortalWebUrl");
+                Log.d(TAG, "`initializeUrl` PortalWebUrl: " + PortalWebUrl);
+
+                // Update the WebView on the main thread
+                runOnUiThread(() -> {
+                    MAIN_URL = PortalWebUrl;
+                    myWeb.loadUrl(MAIN_URL);
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "`initializeUrl` Error checking for updates: " + e.getMessage(), e);
+                runOnUiThread(() -> showError("Failed to fetch update URL.", ""));
+            }
+        }).start();
+    }
+
+
+
+package com.example.portalmbktechstudio;
+
+import android.os.Bundle;
+import android.view.View;
+import android.webkit.WebChromeClient;
+import android.webkit.WebView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ProgressBar;
+
+import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_main);
+
+        // Apply window insets for a full-screen layout
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (view, insets) -> {
+            view.setPadding(
+                    insets.getInsets(WindowInsetsCompat.Type.systemBars()).left,
+                    insets.getInsets(WindowInsetsCompat.Type.systemBars()).top,
+                    insets.getInsets(WindowInsetsCompat.Type.systemBars()).right,
+                    insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+            );
+            return insets;
+        });
+
+        // Initialize views
+        Button submitButton = findViewById(R.id.SubmitButton);
+        EditText editText = findViewById(R.id.editTextText);
+        WebView webView = findViewById(R.id.myWeb);
+        ProgressBar progressBar = findViewById(R.id.progressBar);
+
+        // Configure WebView with progress tracking
+        setupWebView(webView, progressBar);
+
+        // Set up button click listener to load URL and update UI visibility
+        submitButton.setOnClickListener(v -> loadUrl(editText, webView, submitButton, progressBar));
+    }
+
+private void setupWebView(WebView webView, ProgressBar progressBar) {
+    webView.getSettings().setJavaScriptEnabled(true);
+    webView.setWebChromeClient(new WebChromeClient() {
+        // Update progress bar based on WebView loading progress
+        @Override
+        public void onProgressChanged(WebView view, int newProgress) {
+            if (newProgress < 100) {
+                progressBar.setVisibility(View.VISIBLE);
+                progressBar.setProgress(newProgress);
+            } else {
+                progressBar.setVisibility(View.GONE);
+            }
+        }
+    });
+}
+
+private void loadUrl(EditText editText, WebView webView, Button submitButton, ProgressBar progressBar) {
+    String url = editText.getText().toString().trim();
+    if (!url.isEmpty()) {
+        // Ensure the URL starts with a valid scheme
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "http://" + url;
+        }
+        // Hide the input fields and show the WebView
+        editText.setVisibility(View.GONE);
+        submitButton.setVisibility(View.GONE);
+        webView.setVisibility(View.VISIBLE);
+        // Load the URL (progress bar will track progress automatically)
+        webView.loadUrl(url);
+    }
+}
+}
+*/
+
