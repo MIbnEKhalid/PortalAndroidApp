@@ -27,6 +27,7 @@ import java.net.URL;
 
 import android.content.SharedPreferences;
 import android.util.Log;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 public class MainActivity extends AppCompatActivity {
     // Declare UI components
@@ -34,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView debugMessage;
     private Button reloadButton;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     // SharedPreferences for saving app preferences
     private static final String PREFS_NAME = "AppPreferences";
@@ -63,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         debugMessage = findViewById(R.id.debugMessage);
         reloadButton = findViewById(R.id.reloadButton);
+        swipeRefreshLayout = findViewById(R.id.swipeRefresh);
 
         // Hide debug message and reload button initially
         debugMessage.setVisibility(View.GONE);
@@ -87,6 +90,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Set up SwipeRefreshLayout
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            myWeb.reload(); // Reload the current page
+            swipeRefreshLayout.setRefreshing(false); // Stop the refresh indicator
+        });
         try {
             // Load the main portal URL
             myWeb.loadUrl(MAIN_URL);
