@@ -45,10 +45,10 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "WebViewDebug";
 
     // URLs and version constants
-    private static String MAIN_URL = "https://portalapp.mbktechstudio.com/";
+    private static String MAIN_URL = "https://portal.mbktechstudio.com/";
     private static final String REST_API_URL = "https://api.mbktechstudio.com/api/poratlAppVersion";
     private static final String REDIRECT_URL = "https://mbktechstudio.com";
-    private static final String CURRENT_VERSION = "1.3";
+    private static final String CURRENT_VERSION = "1.4";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
