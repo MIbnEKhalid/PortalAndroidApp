@@ -28,6 +28,7 @@ import java.net.URL;
 import android.content.SharedPreferences;
 import android.util.Log;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import android.webkit.ConsoleMessage;
 
 public class MainActivity extends AppCompatActivity {
     // Declare UI components
@@ -45,10 +46,10 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "WebViewDebug";
 
     // URLs and version constants
-    private static String MAIN_URL = "https://portal.mbktechstudio.com/";
+    private static String MAIN_URL = "https://portal.mbktechstudio.com/mbkauthe/login";
     private static final String REST_API_URL = "https://api.mbktechstudio.com/api/poratlAppVersion";
     private static final String REDIRECT_URL = "https://mbktechstudio.com";
-    private static final String CURRENT_VERSION = "1.4";
+    private static final String CURRENT_VERSION = "1.5";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,12 +75,84 @@ public class MainActivity extends AppCompatActivity {
 
     // Configure WebView settings and load URL
     private void setupWebView() {
+        // Enable JavaScript
         myWeb.getSettings().setJavaScriptEnabled(true);
+        
+        // Enable DOM storage (localStorage and sessionStorage)
+        myWeb.getSettings().setDomStorageEnabled(true);
+        
+        // Enable database storage
+        myWeb.getSettings().setDatabaseEnabled(true);
+        
+        // Note: setAppCacheEnabled() has been deprecated and removed in API 33+
+        // Application cache is no longer supported in modern WebView
+        // DOM storage (localStorage/sessionStorage) is the recommended alternative
+        
+        // Allow file access
+        myWeb.getSettings().setAllowFileAccess(true);
+        
+        // Allow content URL access
+        myWeb.getSettings().setAllowContentAccess(true);
+        
+        // Enable mixed content mode (for HTTPS sites that load HTTP resources)
+        myWeb.getSettings().setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        
+        // Set user agent to ensure proper web compatibility
+        myWeb.getSettings().setUserAgentString(myWeb.getSettings().getUserAgentString() + " PortalMBKTechStudio/1.5");
+        
+        // Enable WebView debugging (for Chrome DevTools)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+            WebView.setWebContentsDebuggingEnabled(true);
+        }
+        
         myWeb.setWebViewClient(new WebViewClient() {
             @Override
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                Log.d(TAG, "Page started loading: " + url);
+            }
+            
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                Log.d(TAG, "Page finished loading: " + url);
+                
+                // Hide error UI if page loads successfully
+                debugMessage.setVisibility(View.GONE);
+                reloadButton.setVisibility(View.GONE);
+            }
+            
+            @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                super.onReceivedError(view, errorCode, description, failingUrl);
+                Log.e(TAG, "WebView error: " + description + " (Code: " + errorCode + ")");
                 // Display error message if loading fails
                 showError(description, failingUrl);
+            }
+            
+            @Override
+            public void onReceivedSslError(WebView view, android.webkit.SslErrorHandler handler, android.net.http.SslError error) {
+                Log.w(TAG, "SSL Error: " + error.toString());
+                // For production, you should properly handle SSL errors
+                // For now, proceed to allow the portal to load
+                handler.proceed();
+            }
+            
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                Log.d(TAG, "URL loading: " + url);
+                
+                // Handle portal URLs within the WebView
+                if (url.contains("portal.mbktechstudio.com") || 
+                    url.contains("api.mbktechstudio.com") || 
+                    url.contains("mbktechstudio.com")) {
+                    return false; // Let WebView handle it
+                }
+                
+                // Open external URLs in system browser
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(intent);
+                return true;
             }
         });
         myWeb.setWebChromeClient(new WebChromeClient() {
@@ -87,6 +160,64 @@ public class MainActivity extends AppCompatActivity {
             public void onProgressChanged(WebView view, int newProgress) {
                 // Update progress bar based on page load progress
                 updateProgressBar(newProgress);
+            }
+            
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                // Log frontend console messages to Android LogCat
+                String logLevel = getLogLevel(consoleMessage.messageLevel());
+                String message = "WebView Console [" + logLevel + "]: " + 
+                               consoleMessage.message() + 
+                               " -- From line " + consoleMessage.lineNumber() + 
+                               " of " + consoleMessage.sourceId();
+                
+                // Log to Android LogCat based on console message level
+                switch (consoleMessage.messageLevel()) {
+                    case ERROR:
+                        Log.e(TAG, message);
+                        // Check if it's a localStorage error and log additional info
+                        if (consoleMessage.message().contains("localStorage") || 
+                            consoleMessage.message().contains("getItem") || 
+                            consoleMessage.message().contains("setItem") || 
+                            consoleMessage.message().contains("removeItem")) {
+                            Log.e(TAG, "localStorage error detected - DOM Storage enabled: " + 
+                                  myWeb.getSettings().getDomStorageEnabled());
+                        }
+                        break;
+                    case WARNING:
+                        Log.w(TAG, message);
+                        break;
+                    case DEBUG:
+                        Log.d(TAG, message);
+                        break;
+                    case LOG:
+                    case TIP:
+                    default:
+                        Log.i(TAG, message);
+                        break;
+                }
+                
+                return true; // Return true to consume the message
+            }
+            
+            @Override
+            public void onPermissionRequest(android.webkit.PermissionRequest request) {
+                // Handle permission requests from web content
+                Log.d(TAG, "Permission requested: " + java.util.Arrays.toString(request.getResources()));
+                
+                // For now, grant common permissions that are safe for web content
+                String[] permissions = request.getResources();
+                for (String permission : permissions) {
+                    if (permission.equals(android.webkit.PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID) ||
+                        permission.equals(android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE) ||
+                        permission.equals(android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
+                        request.grant(new String[]{permission});
+                        return;
+                    }
+                }
+                
+                // Grant all requested permissions for portal functionality
+                request.grant(permissions);
             }
         });
 
@@ -98,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             // Load the main portal URL
             myWeb.loadUrl(MAIN_URL);
+            
         } catch (Exception e) {
             // Handle URL loading exceptions
             showError(e.getMessage(), MAIN_URL);
@@ -222,6 +354,24 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton("Update", (dialog, which) -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(updateUrl))))
                 .setNegativeButton("Skip", (dialog, which) -> getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putBoolean(KEY_SKIP_UPDATE, true).apply())
                 .show();
+    }
+
+    // Helper method to convert ConsoleMessage.MessageLevel to readable string
+    private String getLogLevel(ConsoleMessage.MessageLevel level) {
+        switch (level) {
+            case ERROR:
+                return "ERROR";
+            case WARNING:
+                return "WARNING";
+            case DEBUG:
+                return "DEBUG";
+            case LOG:
+                return "LOG";
+            case TIP:
+                return "TIP";
+            default:
+                return "INFO";
+        }
     }
 }
 
