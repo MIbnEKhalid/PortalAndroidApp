@@ -6,17 +6,22 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.view.View;
 import android.widget.TextView;
 import android.widget.ImageButton;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.json.JSONObject;
 
@@ -24,6 +29,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import android.content.SharedPreferences;
 import android.util.Log;
@@ -37,10 +45,13 @@ public class MainActivity extends AppCompatActivity {
     private TextView debugMessage;
     private Button reloadButton;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private FloatingActionButton settingsButton;
 
     // SharedPreferences for saving app preferences
     private static final String PREFS_NAME = "AppPreferences";
     private static final String KEY_SKIP_UPDATE = "SkipUpdate";
+    private static final String KEY_SELECTED_WEBSITES = "SelectedWebsites";
+    private static final String KEY_STARTUP_WEBSITE = "StartupWebsite";
 
     // Log tag for debugging
     private static final String TAG = "WebViewDebug";
@@ -49,16 +60,35 @@ public class MainActivity extends AppCompatActivity {
     private static String MAIN_URL = "https://portal.mbktechstudio.com/mbkauthe/login";
     private static final String REST_API_URL = "https://api.mbktechstudio.com/api/poratlAppVersion";
     private static final String REDIRECT_URL = "https://mbktechstudio.com";
-    private static final String CURRENT_VERSION = "1.5";
+    private static final String CURRENT_VERSION = "1.6";
+
+    // Predefined websites
+    private ArrayList<WebsiteItem> predefinedWebsites;
+    private float dX, dY;
+    private boolean isDragging = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initializePredefinedWebsites();
         initializeViews();
         setupWebView();
         setupReloadButton();
+        setupSettingsButton();
+        loadStartupWebsite();
         checkForUpdates();
+    }
+
+    private void initializePredefinedWebsites() {
+        predefinedWebsites = new ArrayList<>();
+        predefinedWebsites.add(new WebsiteItem("Web Portal", "https://portal.mbktechstudio.com/mbkauthe/login"));
+        predefinedWebsites.add(new WebsiteItem("Main Website", "https://mbktechstudio.com"));
+        predefinedWebsites.add(new WebsiteItem("Download Apps", "https://download.mbktechstudio.com"));
+        predefinedWebsites.add(new WebsiteItem("Unilib", "https://unilib.mbktechstudio.com"));
+
+        // Load saved selections
+        loadWebsiteSelections();
     }
 
     private void initializeViews() {
@@ -67,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
         debugMessage = findViewById(R.id.debugMessage);
         reloadButton = findViewById(R.id.reloadButton);
         swipeRefreshLayout = findViewById(R.id.swipeRefresh);
+        settingsButton = findViewById(R.id.settingsButton);
 
         // Hide debug message and reload button initially
         debugMessage.setVisibility(View.GONE);
@@ -98,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
         myWeb.getSettings().setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         
         // Set user agent to ensure proper web compatibility
-        myWeb.getSettings().setUserAgentString(myWeb.getSettings().getUserAgentString() + " PortalMBKTechStudio/1.5");
+        myWeb.getSettings().setUserAgentString(myWeb.getSettings().getUserAgentString() + " PortalMBKTechStudio/1.6");
         
         // Enable WebView debugging (for Chrome DevTools)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
@@ -263,6 +294,200 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Setup the settings button with draggable functionality
+    private void setupSettingsButton() {
+        settingsButton.setOnTouchListener(new View.OnTouchListener() {
+            private long startTime = 0;
+            private boolean isLongPress = false;
+            
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        startTime = System.currentTimeMillis();
+                        isLongPress = false;
+                        dX = view.getX() - event.getRawX();
+                        dY = view.getY() - event.getRawY();
+                        isDragging = false;
+                        return true;
+                    case MotionEvent.ACTION_MOVE:
+                        float newX = event.getRawX() + dX;
+                        float newY = event.getRawY() + dY;
+                        
+                        // Keep button within screen bounds
+                        if (newX < 0) newX = 0;
+                        if (newY < 0) newY = 0;
+                        if (newX > getResources().getDisplayMetrics().widthPixels - view.getWidth()) {
+                            newX = getResources().getDisplayMetrics().widthPixels - view.getWidth();
+                        }
+                        if (newY > getResources().getDisplayMetrics().heightPixels - view.getHeight()) {
+                            newY = getResources().getDisplayMetrics().heightPixels - view.getHeight();
+                        }
+                        
+                        view.setX(newX);
+                        view.setY(newY);
+                        isDragging = true;
+                        
+                        // Check for long press
+                        if (System.currentTimeMillis() - startTime > 500 && !isLongPress) {
+                            isLongPress = true;
+                            view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                        }
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        if (isLongPress) {
+                            // Long press detected - show quick access
+                            showQuickAccessDialog();
+                        } else if (!isDragging) {
+                            // Regular click - show settings
+                            showSettingsDialog();
+                        }
+                        return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    private void showSettingsDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_settings, null);
+        builder.setView(dialogView);
+        
+        AlertDialog dialog = builder.create();
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        
+        ListView websiteListView = dialogView.findViewById(R.id.websiteListView);
+        ListView startupListView = dialogView.findViewById(R.id.startupListView);
+        Button saveButton = dialogView.findViewById(R.id.saveButton);
+        Button cancelButton = dialogView.findViewById(R.id.cancelButton);
+        
+        // Setup website selection list
+        WebsiteAdapter websiteAdapter = new WebsiteAdapter(this, predefinedWebsites);
+        websiteAdapter.setOnWebsiteClickListener(website -> {
+            // Load the selected website
+            myWeb.loadUrl(website.getUrl());
+            dialog.dismiss();
+        });
+        websiteListView.setAdapter(websiteAdapter);
+        
+        // Setup startup website selection list
+        ArrayList<WebsiteItem> startupWebsites = new ArrayList<>(predefinedWebsites);
+        WebsiteAdapter startupAdapter = new WebsiteAdapter(this, startupWebsites);
+        startupAdapter.setStartupSelection(true);
+        
+        // Set current startup selection
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String startupUrl = prefs.getString(KEY_STARTUP_WEBSITE, MAIN_URL);
+        for (int i = 0; i < startupWebsites.size(); i++) {
+            if (startupWebsites.get(i).getUrl().equals(startupUrl)) {
+                startupAdapter.setSelectedPosition(i);
+                break;
+            }
+        }
+        
+        startupListView.setAdapter(startupAdapter);
+        
+        saveButton.setOnClickListener(v -> {
+            saveWebsiteSelections();
+            saveStartupWebsite(startupAdapter);
+            dialog.dismiss();
+            
+            // Optionally reload with new startup website
+            if (startupAdapter.getSelectedPosition() >= 0) {
+                String newStartupUrl = startupWebsites.get(startupAdapter.getSelectedPosition()).getUrl();
+                if (!newStartupUrl.equals(MAIN_URL)) {
+                    myWeb.loadUrl(newStartupUrl);
+                }
+            }
+        });
+        
+        cancelButton.setOnClickListener(v -> dialog.dismiss());
+        
+        dialog.show();
+    }
+
+    // Method to get only selected websites
+    public ArrayList<WebsiteItem> getSelectedWebsites() {
+        ArrayList<WebsiteItem> selectedWebsites = new ArrayList<>();
+        for (WebsiteItem website : predefinedWebsites) {
+            if (website.isSelected()) {
+                selectedWebsites.add(website);
+            }
+        }
+        return selectedWebsites;
+    }
+
+    // Method to show quick access dialog with only selected websites
+    public void showQuickAccessDialog() {
+        ArrayList<WebsiteItem> selectedWebsites = getSelectedWebsites();
+        
+        if (selectedWebsites.isEmpty()) {
+            // Show settings dialog if no websites are selected
+            showSettingsDialog();
+            return;
+        }
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.quick_access_title);
+        
+        String[] websiteNames = new String[selectedWebsites.size()];
+        for (int i = 0; i < selectedWebsites.size(); i++) {
+            websiteNames[i] = selectedWebsites.get(i).getTitle();
+        }
+        
+        builder.setItems(websiteNames, (dialog, which) -> {
+            WebsiteItem selectedWebsite = selectedWebsites.get(which);
+            myWeb.loadUrl(selectedWebsite.getUrl());
+        });
+        
+        builder.setNegativeButton("Settings", (dialog, which) -> showSettingsDialog());
+        builder.show();
+    }
+
+    private void loadWebsiteSelections() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        Set<String> selectedUrls = prefs.getStringSet(KEY_SELECTED_WEBSITES, new HashSet<>());
+        
+        for (WebsiteItem website : predefinedWebsites) {
+            website.setSelected(selectedUrls.contains(website.getUrl()));
+        }
+    }
+
+    private void saveWebsiteSelections() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        
+        Set<String> selectedUrls = new HashSet<>();
+        for (WebsiteItem website : predefinedWebsites) {
+            if (website.isSelected()) {
+                selectedUrls.add(website.getUrl());
+            }
+        }
+        
+        editor.putStringSet(KEY_SELECTED_WEBSITES, selectedUrls);
+        editor.apply();
+    }
+
+    private void saveStartupWebsite(WebsiteAdapter adapter) {
+        if (adapter.getSelectedPosition() >= 0) {
+            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            String startupUrl = predefinedWebsites.get(adapter.getSelectedPosition()).getUrl();
+            editor.putString(KEY_STARTUP_WEBSITE, startupUrl);
+            editor.apply();
+            
+            // Update MAIN_URL for future use
+            MAIN_URL = startupUrl;
+        }
+    }
+
+    private void loadStartupWebsite() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String startupUrl = prefs.getString(KEY_STARTUP_WEBSITE, MAIN_URL);
+        MAIN_URL = startupUrl;
+    }
+
     @Override
     public void onBackPressed() {
         // Handle back button navigation in WebView
@@ -315,13 +540,7 @@ public class MainActivity extends AppCompatActivity {
     private void handleUpdateResponse(JSONObject jsonResponse) throws Exception {
         String latestVersion = jsonResponse.getString("VersionNumber");
         String updateUrl = jsonResponse.getString("Url");
-        String portalLive = jsonResponse.getString("PortaLive");
 
-        if (!"true".equals(portalLive)) {
-            // Show notice if the portal is down
-            Log.d(TAG, "`checkForUpdates` Portal Down");
-            runOnUiThread(this::showPortalDownNotice);
-        }
 
         // Check if the app version is outdated
         if (isVersionOutdated(CURRENT_VERSION, latestVersion)) {
@@ -333,17 +552,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean isVersionOutdated(String currentVersion, String latestVersion) {
         return currentVersion.compareTo(latestVersion) < 0;
     }
-
-    // Show a dialog when the portal is down
-    private void showPortalDownNotice() {
-        new AlertDialog.Builder(this)
-                .setTitle("Portal Unavailable")
-                .setMessage("The portal is currently unavailable. You will be redirected to the main site until the portal is live again.")
-                .setCancelable(false)
-                .setPositiveButton("Redirect", (dialog, which) -> myWeb.loadUrl(REDIRECT_URL))
-                .show();
-    }
-
     // Show an update dialog when a new version is available
     private void showUpdateDialog(String updateUrl, String currentVersion, String latestVersion) {
         new AlertDialog.Builder(this)

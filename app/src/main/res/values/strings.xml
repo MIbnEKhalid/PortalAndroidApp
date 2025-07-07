@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">Portal MBKTechStudio</string>
     <string name="back_button_description">Go back</string>
+    <string name="settings_button_description">Settings</string>
+    <string name="settings_title">Settings</string>
+    <string name="select_websites_title">Select websites to display (click website name to load):</string>
+    <string name="select_startup_title">Select startup page:</string>
+    <string name="save_button">Save</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="reload_button">Reload</string>
+    <string name="website_title_placeholder">Website Title</string>
+    <string name="website_url_placeholder">https://example.com</string>
+    <string name="quick_access_title">Quick Access</string>
+    <string name="settings_long_press_hint">Long press for Quick Access</string>
 </resources>
